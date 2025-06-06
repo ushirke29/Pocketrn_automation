@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 # 🔽 Add your image here (local file or URL)
-st.image("PocketRN_Logo.png", width=120)  # Adjust width as needed
+st.image("https://raw.githubusercontent.com/yourusername/yourrepo/main/PocketRN_Logo.png", width=120)  # Adjust width as needed
 st.title("PocketRN GUIDE Model Respite Rates By Geography")
 
 
