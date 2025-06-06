@@ -1,16 +1,19 @@
-
-
-
 import streamlit as st
 import pandas as pd
+import io
 
-st.title("📊 GUIDE Respite Rates by Zip Code Generator")
+# 🔽 Add your image here (local file or URL)
+st.image("PocketRN_Logo.png", width=120)  # Adjust width as needed
+st.title("PocketRN GUIDE Model Respite Rates By Geography")
+
 
 st.markdown("Please follow the below instructions for generating updated table of **GUIDE Respite Rates by Zip Code**")
-st.markdown("For more detail explanation please look into this instructions document: [How to Generate Updated Table of GUIDE Respite Rates by Zip Code](https://docs.google.com/document/d/1d1PZjfgPEKe0nJbvP5hJ-HG0Z1w4i19btxGfGJddRTE/edit?tab=t.0#heading=h.guvyizoxu0lz)")
+st.markdown("📘 [Instructions Document](https://docs.google.com/document/d/1d1PZjfgPEKe0nJbvP5hJ-HG0Z1w4i19btxGfGJddRTE/edit?tab=t.0#heading=h.guvyizoxu0lz)")
+
 # ---------------------------
 # File 1: ZIP Code to Carrier Locality
 # ---------------------------
+
 st.markdown("""
 **Source:**  
 🔗 [CMS Fee Schedules Page](https://www.cms.gov/medicare/payment/fee-schedules)  
@@ -53,14 +56,8 @@ if file2:
     st.markdown("""
 **Source:**  
 🔗 [CMS Market Basket Data Page](https://www.cms.gov/research-statistics-data-and-systems/statistics-trends-and-reports/medicareprogramratesstats/marketbasketdata)  
-
-**Step 1:** Download the ZIP titled:  
-**“Actual Regulation Market Basket Updates (ZIP)”**  
-
-**Step 2:** 📦 Extract the ZIP to locate:  
-`Summary Web Table – Actual.xlsx`  
-
-**Step 3:** Upload the Excel file below:
+**Step 1:** Download: `Summary Web Table – Actual.xlsx`  
+**Step 2:** Upload:
 """)
     file3 = st.file_uploader("", type=["xlsx", "csv"], key="file3")
 else:
@@ -114,18 +111,15 @@ if file3:
 if file1 and file2 and file3 and market_adjustment is not None:
     if st.button("🚀 Generate Report"):
         try:
-            # ✅ UPDATED: Read both CSV/XLSX formats correctly
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
             df2 = pd.read_excel(file2) if file2.name.endswith("xlsx") else pd.read_csv(file2, encoding="latin1")
 
             df1 = df1[["STATE", "ZIP CODE", "LOCALITY"]]
-            # Clean column names
             df2 = pd.read_excel(
                 file2,
                 usecols=["State", "Locality Number", "Locality Name", "2025 GAF (without 1.0 Work Floor)"],
                 header=2
             )
-
 
             merged_df = pd.merge(
                 df1,
@@ -143,9 +137,8 @@ if file1 and file2 and file3 and market_adjustment is not None:
 
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
-            final_df["Geography"] = final_df["Geography"].astype(str).str.replace(r"\*+", "", regex=True).str.strip()
 
-            # Clean Geography and replace NaNs
+            final_df["ZIP CODE"] = final_df["ZIP CODE"].astype(str).str.zfill(5)
             final_df["Geography"] = final_df["Geography"].astype(str).str.replace(r"\*+", "", regex=True).str.strip()
             final_df.replace(to_replace=["nan", "NaT", "None", "NAN"], value="NA", inplace=True)
             final_df.fillna("NA", inplace=True)
@@ -153,14 +146,45 @@ if file1 and file2 and file3 and market_adjustment is not None:
             st.subheader("✅ Final Output: ZIP Code, Geography, Respite Reimbursement Rate ($/hr)")
             st.dataframe(final_df)
 
-            csv_data = final_df.to_csv(index=False).encode("utf-8")
-            st.download_button(
-                "⬇️ Download Final CSV",
-                data=csv_data,
-                file_name="Look up Respite Rate.csv",
-                mime="text/csv"
-            )
+            # Store in session state to keep download buttons active
+            st.session_state["final_df"] = final_df
+
+            st.success("✅ Report generated! Download options appear below.")
+
         except Exception as e:
             st.error(f"❌ Error during processing: {e}")
-else:
-    st.info("📥 Please upload all three files and select a year column to enable report generation.")
+
+# ---------------------------
+# Download Buttons (if available)
+# ---------------------------
+if "final_df" in st.session_state:
+    final_df = st.session_state["final_df"]
+
+    # 📤 CSV Export (Excel-safe ZIPs)
+    csv_df = final_df.copy()
+    csv_df["ZIP CODE"] = csv_df["ZIP CODE"].apply(lambda x: f'="{x}"')
+    csv_data = csv_df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "⬇️ Download CSV (.csv)",
+        data=csv_data,
+        file_name="Look up Respite Rate.csv",
+        mime="text/csv"
+    )
+
+    # 📤 Excel Export (text ZIPs)
+    xlsx_output = io.BytesIO()
+    with pd.ExcelWriter(xlsx_output, engine="xlsxwriter") as writer:
+        final_df.to_excel(writer, index=False, sheet_name="Respite Rates")
+        workbook = writer.book
+        worksheet = writer.sheets["Respite Rates"]
+        zip_col_idx = final_df.columns.get_loc("ZIP CODE")
+        text_format = workbook.add_format({'num_format': '@'})
+        worksheet.set_column(zip_col_idx, zip_col_idx, 12, text_format)
+
+    xlsx_data = xlsx_output.getvalue()
+    st.download_button(
+        "⬇️ Download Excel (.xlsx)",
+        data=xlsx_data,
+        file_name="Look up Respite Rate.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
