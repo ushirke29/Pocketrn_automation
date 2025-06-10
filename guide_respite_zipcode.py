@@ -3,9 +3,8 @@ import pandas as pd
 import io
 
 # 🔽 Add your image here (local file or URL)
-st.image("https://raw.githubusercontent.com/ushirke29/Pocketrn_automation/main/PocketRN_Logo.png", width=120)  # Adjust width as needed
+st.image("PocketRN_Logo.png", width=120)  # Adjust width as needed
 st.title("PocketRN GUIDE Model Respite Rates By Geography")
-
 
 st.markdown("Please follow the below instructions for generating updated table of **GUIDE Respite Rates by Zip Code**")
 st.markdown("📘 [Instructions Document](https://docs.google.com/document/d/1d1PZjfgPEKe0nJbvP5hJ-HG0Z1w4i19btxGfGJddRTE/edit?tab=t.0#heading=h.guvyizoxu0lz)")
@@ -13,7 +12,6 @@ st.markdown("📘 [Instructions Document](https://docs.google.com/document/d/1d1
 # ---------------------------
 # File 1: ZIP Code to Carrier Locality
 # ---------------------------
-
 st.markdown("""
 **Source:**  
 🔗 [CMS Fee Schedules Page](https://www.cms.gov/medicare/payment/fee-schedules)  
@@ -40,8 +38,7 @@ if file1:
 
 **Step 2:** Download **“CY 2025 PFS Final Rule Addenda (Updated MM/DD/YYYY)”**  
 
-**Step 3:** 📦 Extract the ZIP to locate:  
-`Addendum D Geographic Adjustment Factors.xlsx`  
+**Step 3:** 📦 Extract the ZIP to locate: `Addendum D Geographic Adjustment Factors.xlsx`  
 
 **Step 4:** Upload the file below:
 """)
@@ -56,8 +53,12 @@ if file2:
     st.markdown("""
 **Source:**  
 🔗 [CMS Market Basket Data Page](https://www.cms.gov/research-statistics-data-and-systems/statistics-trends-and-reports/medicareprogramratesstats/marketbasketdata)  
-**Step 1:** Download: `Summary Web Table – Actual.xlsx`  
-**Step 2:** Upload:
+***Step 1:** Download:  
+**“Actual Regulation Market Basket Updates (ZIP)”**  
+
+**Step 2:** 📦 Extract the ZIP to locate: `Summary Web Table -- Actual (20XXQX)`  
+
+**Step 3:** Upload the file below:
 """)
     file3 = st.file_uploader("", type=["xlsx", "csv"], key="file3")
 else:
@@ -106,9 +107,25 @@ if file3:
         st.warning(f"⚠️ Could not extract Market Basket Adjustment: {e}")
 
 # ---------------------------
+# Base Rate Input
+# ---------------------------
+base_rate = None
+if file1 and file2 and file3 and market_adjustment is not None:
+    base_rate = st.number_input(
+        "💲 Enter Base Hourly Respite Rate ($)",
+        min_value=0.0,
+        max_value=1000.0,
+        value=0.0,
+        step=0.25
+    )
+
+    if base_rate <= 0:
+        st.warning("⚠️ Please enter a base hourly respite rate greater than 0 to proceed.")
+
+# ---------------------------
 # Final Report Generation
 # ---------------------------
-if file1 and file2 and file3 and market_adjustment is not None:
+if file1 and file2 and file3 and market_adjustment is not None and base_rate and base_rate > 0:
     if st.button("🚀 Generate Report"):
         try:
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
@@ -131,7 +148,7 @@ if file1 and file2 and file3 and market_adjustment is not None:
 
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
                 merged_df["2025 GAF (without 1.0 Work Floor)"]
-                * 33.75
+                * base_rate
                 * (1 + market_adjustment / 100)
             ).round(2)
 
@@ -153,6 +170,80 @@ if file1 and file2 and file3 and market_adjustment is not None:
 
         except Exception as e:
             st.error(f"❌ Error during processing: {e}")
+
+
+# # ---------------------------
+# # Base Rate Input + Confirmation
+# # ---------------------------
+# if file1 and file2 and file3 and market_adjustment is not None:
+#     st.markdown("### 💲 Base Hourly Respite Rate Input")
+#     base_rate_input = st.number_input(
+#         "Enter the Base Hourly Respite Rate ($):",
+#         min_value=0.0,
+#         max_value=1000.0,
+#         value=0.0,
+#         step=0.25,
+#         key="base_rate_input"
+#     )
+
+#     if st.button("✅ Enter Base Rate"):
+#         if base_rate_input > 0:
+#             st.session_state["confirmed_base_rate"] = base_rate_input
+#             st.success(f"Base rate set to ${base_rate_input:.2f}")
+#         else:
+#             st.warning("⚠️ Please enter a base hourly respite rate greater than 0.")
+
+# # ---------------------------
+# # Final Report Generation
+# # ---------------------------
+# base_rate = st.session_state.get("confirmed_base_rate", None)
+
+# if file1 and file2 and file3 and market_adjustment is not None and base_rate:
+#     st.markdown("---")
+#     if st.button("🚀 Generate Report"):
+#         try:
+#             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
+#             df2 = pd.read_excel(file2) if file2.name.endswith("xlsx") else pd.read_csv(file2, encoding="latin1")
+
+#             df1 = df1[["STATE", "ZIP CODE", "LOCALITY"]]
+#             df2 = pd.read_excel(
+#                 file2,
+#                 usecols=["State", "Locality Number", "Locality Name", "2025 GAF (without 1.0 Work Floor)"],
+#                 header=2
+#             )
+
+#             merged_df = pd.merge(
+#                 df1,
+#                 df2,
+#                 how="left",
+#                 left_on=["STATE", "LOCALITY"],
+#                 right_on=["State", "Locality Number"]
+#             )
+
+#             merged_df["Respite Reimbursement Rate ($/hr)"] = (
+#                 merged_df["2025 GAF (without 1.0 Work Floor)"]
+#                 * base_rate
+#                 * (1 + market_adjustment / 100)
+#             ).round(2)
+
+#             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
+#             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
+
+#             final_df["ZIP CODE"] = final_df["ZIP CODE"].astype(str).str.zfill(5)
+#             final_df["Geography"] = final_df["Geography"].astype(str).str.replace(r"\*+", "", regex=True).str.strip()
+#             final_df.replace(to_replace=["nan", "NaT", "None", "NAN"], value="NA", inplace=True)
+#             final_df.fillna("NA", inplace=True)
+
+#             st.subheader("✅ Final Output: ZIP Code, Geography, Respite Reimbursement Rate ($/hr)")
+#             st.dataframe(final_df)
+
+#             st.session_state["final_df"] = final_df
+
+#             st.success("✅ Report generated! Download options appear below.")
+
+#         except Exception as e:
+#             st.error(f"❌ Error during processing: {e}")
+
 
 # ---------------------------
 # Download Buttons (if available)
