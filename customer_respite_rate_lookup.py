@@ -71,7 +71,7 @@ selected_zip = st.selectbox("📍 Select your ZIP Code:", [""] + zip_codes)
 
 # Show placeholder if nothing selected
 if not selected_zip:
-    st.info("Please select a ZIP Code from the dropdown above to view details.")
+    st.info("Please type in your zip code to get the GUIDE reimbursement rate.")
 else:
     row = df[df["ZIP CODE"] == selected_zip]
     if not row.empty:
