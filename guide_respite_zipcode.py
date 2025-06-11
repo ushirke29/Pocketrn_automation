@@ -19,7 +19,7 @@ st.markdown("""
 **Step 1:** 📁 Download the latest ZIP Code to Carrier Locality file titled:  
 **“Zip Code to Carrier Locality File - Revised MM/DD/YYYY”**  
 
-**Step 2:** 📦 Extract the ZIP to find the file: `ZIP5_APR2025.xlsx`  
+**Step 2:** 📦 Extract the ZIP to find the file: `ZIP5_XXX20XX.xlsx`  
 
 **Step 3:** Upload the Excel or CSV file below:
 """)
