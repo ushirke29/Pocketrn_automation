@@ -151,6 +151,8 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
                 * base_rate
             ).round(2)
 
+            merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df["Respite Reimbursement Rate ($/hr)"].map("{:.2f}".format)
+
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
 
