@@ -37,6 +37,8 @@ st.markdown("""
     }
 
     .card {
+        height: 200px;  /* Fixed height */
+        width: 100%;    /* Fill column */
         padding: 30px;
         border-radius: 15px;
         background-color: #f0f4f8;
@@ -46,6 +48,12 @@ st.markdown("""
         font-weight: bold;
         color: #1f4e79;
         margin-top: 20px;
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
     }
 
     .label {
@@ -71,7 +79,7 @@ selected_zip = st.selectbox("📍 Select your ZIP Code:", [""] + zip_codes)
 
 # Show placeholder if nothing selected
 if not selected_zip:
-    st.info("Please type in your zip code to get the GUIDE reimbursement rate.")
+    st.info("Please select a ZIP Code from the dropdown above to view details.")
 else:
     row = df[df["ZIP CODE"] == selected_zip]
     if not row.empty:
@@ -88,11 +96,18 @@ else:
 
         with col2:
             st.markdown(
-                f'<div class="card"><div class="label">Respite Rate ($/hr)</div>${rate:.2f}</div>',
+                f'''
+                <div class="card">
+                    <div class="label">Respite Rate ($/hr)</div>
+                    ${rate:.2f}
+                    <div style="font-size: 14px; color: #d9534f; margin-top: 10px;">
+                        72 hours annually per client<br>
+                        (Valid 7/1/2025–6/30/2026)
+                    </div>
+                </div>
+                ''',
                 unsafe_allow_html=True
             )
     else:
         st.warning("ZIP Code not found.")
-
-
 
