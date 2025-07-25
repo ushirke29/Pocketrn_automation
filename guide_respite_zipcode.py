@@ -132,6 +132,15 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
             df2 = pd.read_excel(file2) if file2.name.endswith("xlsx") else pd.read_csv(file2, encoding="latin1")
 
             df1 = df1[["STATE", "ZIP CODE", "LOCALITY"]]
+
+            # Normalize 'STATE' codes
+            df1["STATE"] = df1["STATE"].replace({
+                "EK": "KS",
+                "WK": "KS",
+                "EM": "MO",
+                "WM": "MO"
+            })
+            
             df2 = pd.read_excel(
                 file2,
                 usecols=["State", "Locality Number", "Locality Name", "2025 GAF (without 1.0 Work Floor)"],
