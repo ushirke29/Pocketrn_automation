@@ -131,7 +131,7 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
             df2 = pd.read_excel(file2) if file2.name.endswith("xlsx") else pd.read_csv(file2, encoding="latin1")
 
-            df1 = df1[["STATE", "ZIP CODE", "LOCALITY"]]
+            df1 = df1[["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]]
 
             # Normalize 'STATE' codes
             df1["STATE"] = df1["STATE"].replace({
@@ -140,13 +140,14 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
                 "EM": "MO",
                 "WM": "MO"
             })
-            
+
             df2 = pd.read_excel(
                 file2,
-                usecols=["State", "Locality Number", "Locality Name", "2025 GAF (without 1.0 Work Floor)"],
+                usecols=["Medicare Administrative Contractor (MAC)", "State", "Locality Number", "Locality Name", "2025 GAF (without 1.0 Work Floor)"],
                 header=2
             )
 
+            # --- Primary merge: STATE + LOCALITY ---
             merged_df = pd.merge(
                 df1,
                 df2,
@@ -155,12 +156,36 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
                 right_on=["State", "Locality Number"]
             )
 
+            # --- Identify rows that didn’t match ---
+            missing_mask = merged_df["2025 GAF (without 1.0 Work Floor)"].isna()
+
+            # --- Secondary merge: MAC + LOCALITY (CARRIER ↔ MAC) ---
+            if missing_mask.any():
+                missing_df1 = df1.loc[missing_mask, ["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
+
+                secondary_merge = pd.merge(
+                    missing_df1,
+                    df2,
+                    how="left",
+                    left_on=["CARRIER", "LOCALITY"],
+                    right_on=["Medicare Administrative Contractor (MAC)", "Locality Number"]
+                )
+
+                # Fill missing fields from secondary match
+                merged_df.loc[missing_mask, "2025 GAF (without 1.0 Work Floor)"] = secondary_merge[
+                    "2025 GAF (without 1.0 Work Floor)"
+                ].values
+                merged_df.loc[missing_mask, "Locality Name"] = secondary_merge["Locality Name"].values
+
+            # --- Compute Respite Rate ---
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
-                merged_df["2025 GAF (without 1.0 Work Floor)"]
-                * base_rate
+                merged_df["2025 GAF (without 1.0 Work Floor)"] * base_rate
             ).round(2)
 
-            merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df["Respite Reimbursement Rate ($/hr)"].map("{:.2f}".format)
+            merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df[
+                "Respite Reimbursement Rate ($/hr)"
+            ].map("{:.2f}".format)
+
 
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
