@@ -19,7 +19,7 @@ st.markdown("""
 **Step 1:** 📁 Download the latest ZIP Code to Carrier Locality file titled:  
 **“Zip Code to Carrier Locality File - Revised MM/DD/YYYY”**  
 
-**Step 2:** 📦 Extract the ZIP to find the file: `ZIP5_APR2025.xlsx`  
+**Step 2:** 📦 Extract the ZIP to find the file: `ZIP5_APR2026.xlsx`  
 
 **Step 3:** Upload the Excel or CSV file below:
 """)
@@ -36,7 +36,7 @@ if file1:
 **Step 1:** Find the most recent file titled:  
 **“CMS-1807-F”**  
 
-**Step 2:** Download **“CY 2025 PFS Final Rule Addenda (Updated MM/DD/YYYY)”**  
+**Step 2:** Download **“CY 2026 PFS Final Rule Addenda (Updated MM/DD/YYYY)”**  
 
 **Step 3:** 📦 Extract the ZIP to locate: `Addendum D Geographic Adjustment Factors.xlsx`  
 
@@ -46,71 +46,11 @@ if file1:
 else:
     file2 = None
 
-# # ---------------------------
-# # File 3: Market Basket PPS Summary
-# # ---------------------------
-# if file2:
-#     st.markdown("""
-# **Source:**  
-# 🔗 [CMS Market Basket Data Page](https://www.cms.gov/research-statistics-data-and-systems/statistics-trends-and-reports/medicareprogramratesstats/marketbasketdata)  
-# ***Step 1:** Download:  
-# **“Actual Regulation Market Basket Updates (ZIP)”**  
-
-# **Step 2:** 📦 Extract the ZIP to locate: `Summary Web Table -- Actual (20XXQX)`  
-
-# **Step 3:** Upload the file below:
-# """)
-#     file3 = st.file_uploader("", type=["xlsx", "csv"], key="file3")
-# else:
-#     file3 = None
-
-# # ---------------------------
-# # Market Basket Adjustment Extraction
-# # ---------------------------
-# market_adjustment = None
-# selected_year_col = None
-
-# if file3:
-#     try:
-#         pps_df = pd.read_excel(file3, header=None)
-#         hha_row_index = pps_df[pps_df[0].astype(str).str.contains("Home Health Agency PPS", case=False, na=False)].index[0]
-#         headers = pps_df.iloc[hha_row_index]
-#         valid_columns = headers.notna()
-#         data_block = pps_df.iloc[hha_row_index + 1:hha_row_index + 4].copy()
-#         data_block = data_block.loc[:, valid_columns]
-#         clean_headers = headers[valid_columns].tolist()
-
-#         def make_unique_columns(cols):
-#             seen = {}
-#             unique = []
-#             for col in cols:
-#                 if col not in seen:
-#                     seen[col] = 0
-#                     unique.append(col)
-#                 else:
-#                     seen[col] += 1
-#                     unique.append(f"{col}_{seen[col]}")
-#             return unique
-
-#         data_block.columns = make_unique_columns(clean_headers)
-#         fy_cols = sorted([col for col in data_block.columns if isinstance(col, str) and col.startswith("FY")])
-#         cy_cols = sorted([col for col in data_block.columns if isinstance(col, str) and col.startswith("CY")])
-#         year_columns = fy_cols + cy_cols
-
-#         selected_year_col = st.selectbox("📅 Select Year Column for Market Adjustment", year_columns)
-
-#         mb_row = data_block[data_block.iloc[:, 0].astype(str).str.contains("Market Basket Update less Productivity Adjustment", case=False, na=False)]
-#         market_adjustment = float(mb_row[selected_year_col].values[0])
-
-#         st.success(f"✅ Market Adjustment for {selected_year_col}: {market_adjustment}%")
-#     except Exception as e:
-#         st.warning(f"⚠️ Could not extract Market Basket Adjustment: {e}")
-
 # ---------------------------
 # Base Rate Input
 # ---------------------------
 base_rate = None
-if file1 and file2  is not None:
+if file1 and file2 is not None:
     base_rate = st.number_input(
         "💲 Enter Base Hourly Respite Rate ($)",
         min_value=0.0,
@@ -125,7 +65,7 @@ if file1 and file2  is not None:
 # ---------------------------
 # Final Report Generation
 # ---------------------------
-if file1 and file2  is not None and base_rate and base_rate > 0:
+if file1 and file2 is not None and base_rate and base_rate > 0:
     if st.button("🚀 Generate Report"):
         try:
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
@@ -157,7 +97,7 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
             )
 
             # --- Identify rows that didn’t match ---
-            missing_mask = merged_df["2025 GAF (without 1.0 Work Floor)"].isna()
+            missing_mask = merged_df["2026 GAF (without 1.0 Work Floor)"].isna()
 
             # --- Secondary merge: MAC + LOCALITY (CARRIER ↔ MAC) ---
             if missing_mask.any():
@@ -172,20 +112,19 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
                 )
 
                 # Fill missing fields from secondary match
-                merged_df.loc[missing_mask, "2025 GAF (without 1.0 Work Floor)"] = secondary_merge[
-                    "2025 GAF (without 1.0 Work Floor)"
+                merged_df.loc[missing_mask, "2026 GAF (without 1.0 Work Floor)"] = secondary_merge[
+                    "2026 GAF (without 1.0 Work Floor)"
                 ].values
                 merged_df.loc[missing_mask, "Locality Name"] = secondary_merge["Locality Name"].values
 
             # --- Compute Respite Rate ---
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
-                merged_df["2025 GAF (without 1.0 Work Floor)"] * base_rate
+                merged_df["2026 GAF (without 1.0 Work Floor)"] * base_rate
             ).round(2)
 
             merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df[
                 "Respite Reimbursement Rate ($/hr)"
             ].map("{:.2f}".format)
-
 
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
@@ -205,8 +144,6 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
 
         except Exception as e:
             st.error(f"❌ Error during processing: {e}")
-
-
 
 # ---------------------------
 # Download Buttons (if available)
