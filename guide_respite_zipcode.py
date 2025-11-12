@@ -3,7 +3,7 @@ import pandas as pd
 import io
 
 # 🔽 Add your image here (local file or URL)
-st.image("PocketRN_Logo.png", width=120)  # Adjust width as needed
+st.image("PocketRN_Logo.png", width=120)
 st.title("PocketRN GUIDE Model Respite Rates By Geography")
 
 st.markdown("Please follow the below instructions for generating updated table of **GUIDE Respite Rates by Zip Code**")
@@ -46,6 +46,7 @@ if file1:
 else:
     file2 = None
 
+
 # ---------------------------
 # Base Rate Input
 # ---------------------------
@@ -62,34 +63,30 @@ if file1 and file2 is not None:
     if base_rate <= 0:
         st.warning("⚠️ Please enter a base hourly respite rate greater than 0 to proceed.")
 
+
 # ---------------------------
 # Final Report Generation
 # ---------------------------
 if file1 and file2 is not None and base_rate and base_rate > 0:
     if st.button("🚀 Generate Report"):
         try:
+            # --- Load files ---
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
-            df2 = pd.read_excel(file2) if file2.name.endswith("xlsx") else pd.read_csv(file2, encoding="latin1")
+            df2 = pd.read_excel(file2, header=2, usecols=[
+                "Medicare Administrative Contractor (MAC)",
+                "State",
+                "Locality Number",
+                "Locality Name",
+                "2026 GAF (without 1.0 Work Floor)"
+            ])
 
-            df1 = df1[["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]]
-
-            # Normalize 'STATE' codes
-            df1["STATE"] = df1["STATE"].replace({
-                "EK": "KS",
-                "WK": "KS",
-                "EM": "MO",
-                "WM": "MO"
-            })
-
-            df2 = pd.read_excel(
-                file2,
-                usecols=["Medicare Administrative Contractor (MAC)", "State", "Locality Number", "Locality Name", "2026 GAF (without 1.0 Work Floor)"],
-                header=2
-            )
-
-            # 🧩 Ensure compatible data types for merging
+            # --- Clean up and normalize keys ---
+            df1 = df1[["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
+            df1["STATE"] = df1["STATE"].astype(str).str.strip()
             df1["LOCALITY"] = df1["LOCALITY"].astype(str).str.strip()
             df1["CARRIER"] = df1["CARRIER"].astype(str).str.strip()
+
+            df2["State"] = df2["State"].astype(str).str.strip()
             df2["Locality Number"] = df2["Locality Number"].astype(str).str.strip()
             df2["Medicare Administrative Contractor (MAC)"] = df2["Medicare Administrative Contractor (MAC)"].astype(str).str.strip()
 
@@ -107,7 +104,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
 
             # --- Secondary merge: MAC + LOCALITY (CARRIER ↔ MAC) ---
             if missing_mask.any():
-                missing_df1 = df1.loc[missing_mask, ["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
+                missing_df1 = merged_df.loc[missing_mask, ["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
 
                 secondary_merge = pd.merge(
                     missing_df1,
@@ -117,7 +114,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                     right_on=["Medicare Administrative Contractor (MAC)", "Locality Number"]
                 )
 
-                # Fill missing fields from secondary match
+                # Only fill missing values (don’t overwrite matched rows)
                 merged_df.loc[missing_mask, "2026 GAF (without 1.0 Work Floor)"] = secondary_merge[
                     "2026 GAF (without 1.0 Work Floor)"
                 ].values
@@ -125,13 +122,14 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
 
             # --- Compute Respite Rate ---
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
-                merged_df["2026 GAF (without 1.0 Work Floor)"] * base_rate
+                merged_df["2026 GAF (without 1.0 Work Floor)"].astype(float) * base_rate
             ).round(2)
 
             merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df[
                 "Respite Reimbursement Rate ($/hr)"
             ].map("{:.2f}".format)
 
+            # --- Final output formatting ---
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
 
@@ -140,16 +138,16 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
             final_df.replace(to_replace=["nan", "NaT", "None", "NAN"], value="NA", inplace=True)
             final_df.fillna("NA", inplace=True)
 
+            # --- Display and downloads ---
             st.subheader("✅ Final Output: ZIP Code, Geography, Respite Reimbursement Rate ($/hr)")
             st.dataframe(final_df)
 
-            # Store in session state to keep download buttons active
             st.session_state["final_df"] = final_df
-
-            st.success("✅ Report generated! Download options appear below.")
+            st.success("✅ Report generated successfully!")
 
         except Exception as e:
             st.error(f"❌ Error during processing: {e}")
+
 
 # ---------------------------
 # Download Buttons (if available)
@@ -157,10 +155,10 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
 if "final_df" in st.session_state:
     final_df = st.session_state["final_df"]
 
-    # 📤 CSV Export (Excel-safe ZIPs)
     csv_df = final_df.copy()
     csv_df["ZIP CODE"] = csv_df["ZIP CODE"].apply(lambda x: f'="{x}"')
     csv_data = csv_df.to_csv(index=False).encode("utf-8")
+
     st.download_button(
         "⬇️ Download CSV (.csv)",
         data=csv_data,
@@ -168,7 +166,6 @@ if "final_df" in st.session_state:
         mime="text/csv"
     )
 
-    # 📤 Excel Export (text ZIPs)
     xlsx_output = io.BytesIO()
     with pd.ExcelWriter(xlsx_output, engine="xlsxwriter") as writer:
         final_df.to_excel(writer, index=False, sheet_name="Respite Rates")
