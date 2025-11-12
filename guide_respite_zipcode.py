@@ -87,6 +87,12 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                 header=2
             )
 
+            # 🧩 Ensure compatible data types for merging
+            df1["LOCALITY"] = df1["LOCALITY"].astype(str).str.strip()
+            df1["CARRIER"] = df1["CARRIER"].astype(str).str.strip()
+            df2["Locality Number"] = df2["Locality Number"].astype(str).str.strip()
+            df2["Medicare Administrative Contractor (MAC)"] = df2["Medicare Administrative Contractor (MAC)"].astype(str).str.strip()
+
             # --- Primary merge: STATE + LOCALITY ---
             merged_df = pd.merge(
                 df1,
