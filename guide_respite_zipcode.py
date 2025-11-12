@@ -71,7 +71,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
             df2 = pd.read_excel(file2, header=2)
 
-            # Select required columns
+            # Select relevant columns
             df1 = df1[["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]]
             df2 = df2[[
                 "Medicare Administrative Contractor (MAC)",
@@ -82,16 +82,16 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
             ]]
 
             # ---------------------------
-            # Normalize merge keys
+            # Normalize merge keys safely
             # ---------------------------
             df1["STATE"] = df1["STATE"].astype(str).str.strip().str.upper()
             df2["State"] = df2["State"].astype(str).str.strip().str.upper()
 
-            # Convert LOCALITY / Locality Number to strings with no decimals
-            df1["LOCALITY"] = df1["LOCALITY"].astype(float).astype(int).astype(str)
-            df2["Locality Number"] = df2["Locality Number"].astype(float).astype(int).astype(str)
+            # Safe conversion for LOCALITY and Locality Number
+            df1["LOCALITY"] = df1["LOCALITY"].apply(lambda x: str(int(float(x))) if pd.notna(x) else None)
+            df2["Locality Number"] = df2["Locality Number"].apply(lambda x: str(int(float(x))) if pd.notna(x) else None)
 
-            # Pad carrier and MAC to 5 digits
+            # Pad carrier and MAC codes to 5 digits
             df1["CARRIER"] = df1["CARRIER"].astype(str).str.zfill(5)
             df2["Medicare Administrative Contractor (MAC)"] = (
                 df2["Medicare Administrative Contractor (MAC)"].astype(str).str.zfill(5)
@@ -111,7 +111,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
             primary_matches = merged_df["2026 GAF (without 1.0 Work Floor)"].notna().sum()
 
             # ---------------------------
-            # Fallback merge: MAC + LOCALITY (only missing)
+            # Fallback merge: MAC + LOCALITY (CARRIER ↔ MAC)
             # ---------------------------
             missing_mask = merged_df["2026 GAF (without 1.0 Work Floor)"].isna()
             if missing_mask.any():
@@ -126,7 +126,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
 
                 secondary_matches = secondary_merge["2026 GAF (without 1.0 Work Floor)"].notna().sum()
 
-                # Fill missing results from secondary merge
+                # Fill missing from secondary results
                 merged_df.loc[missing_mask, "2026 GAF (without 1.0 Work Floor)"] = secondary_merge[
                     "2026 GAF (without 1.0 Work Floor)"
                 ].values
@@ -135,16 +135,19 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                 secondary_matches = 0
 
             # ---------------------------
-            # Compute Final Rates
+            # Compute Respite Rates
             # ---------------------------
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
-                merged_df["2026 GAF (without 1.0 Work Floor)"].astype(float) * base_rate
+                pd.to_numeric(merged_df["2026 GAF (without 1.0 Work Floor)"], errors="coerce") * base_rate
             ).round(2)
 
             merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df[
                 "Respite Reimbursement Rate ($/hr)"
-            ].map("{:.2f}".format)
+            ].map(lambda x: f"{x:.2f}" if pd.notna(x) else "NA")
 
+            # ---------------------------
+            # Prepare Final Output
+            # ---------------------------
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
             final_df["ZIP CODE"] = final_df["ZIP CODE"].astype(str).str.zfill(5)
@@ -153,7 +156,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
             final_df.fillna("NA", inplace=True)
 
             # ---------------------------
-            # Output
+            # Summary + Output
             # ---------------------------
             st.info(f"✅ Primary matches: {primary_matches:,}")
             st.info(f"🔁 Fallback (MAC+Locality) recovered: {secondary_matches:,}")
@@ -174,6 +177,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
 if "final_df" in st.session_state:
     final_df = st.session_state["final_df"]
 
+    # CSV export
     csv_df = final_df.copy()
     csv_df["ZIP CODE"] = csv_df["ZIP CODE"].apply(lambda x: f'="{x}"')
     csv_data = csv_df.to_csv(index=False).encode("utf-8")
@@ -184,7 +188,7 @@ if "final_df" in st.session_state:
         mime="text/csv"
     )
 
-    # Excel download
+    # Excel export
     xlsx_output = io.BytesIO()
     with pd.ExcelWriter(xlsx_output, engine="xlsxwriter") as writer:
         final_df.to_excel(writer, index=False, sheet_name="Respite Rates")
