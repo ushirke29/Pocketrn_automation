@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import io
 
-# 🔽 Add your image here (local file or URL)
 st.image("PocketRN_Logo.png", width=120)
 st.title("PocketRN GUIDE Model Respite Rates By Geography")
 
@@ -10,85 +9,65 @@ st.markdown("Please follow the below instructions for generating updated table o
 st.markdown("📘 [Instructions Document](https://docs.google.com/document/d/1d1PZjfgPEKe0nJbvP5hJ-HG0Z1w4i19btxGfGJddRTE/edit?tab=t.0#heading=h.guvyizoxu0lz)")
 
 # ---------------------------
-# File 1: ZIP Code to Carrier Locality
+# File 1 Upload
 # ---------------------------
 st.markdown("""
 **Source:**  
 🔗 [CMS Fee Schedules Page](https://www.cms.gov/medicare/payment/fee-schedules)  
 
-**Step 1:** 📁 Download the latest ZIP Code to Carrier Locality file titled:  
-**“Zip Code to Carrier Locality File - Revised MM/DD/YYYY”**  
-
-**Step 2:** 📦 Extract the ZIP to find the file: `ZIP5_APR2026.xlsx`  
-
-**Step 3:** Upload the Excel or CSV file below:
+**Step 1:** 📁 Download the latest ZIP Code to Carrier Locality file.  
+**Step 2:** 📦 Extract and upload the file below:
 """)
 file1 = st.file_uploader("", type=["xlsx", "csv"], key="file1")
 
 # ---------------------------
-# File 2: Addendum D GAF
+# File 2 Upload
 # ---------------------------
 if file1:
     st.markdown("""
 **Source:**  
 🔗 [CMS Federal Regulation Notices Page](https://www.cms.gov/medicare/payment/fee-schedules/physician/federal-regulation-notices)  
 
-**Step 1:** Find the most recent file titled:  
-**“CMS-1807-F”**  
-
-**Step 2:** Download **“CY 2026 PFS Final Rule Addenda (Updated MM/DD/YYYY)”**  
-
-**Step 3:** 📦 Extract the ZIP to locate: `Addendum D Geographic Adjustment Factors.xlsx`  
-
-**Step 4:** Upload the file below:
+**Upload the Addendum D Geographic Adjustment Factors file below:**
 """)
     file2 = st.file_uploader("", type=["xlsx", "csv"], key="file2")
 else:
     file2 = None
 
-
 # ---------------------------
 # Base Rate Input
 # ---------------------------
-base_rate = None
-if file1 and file2 is not None:
-    base_rate = st.number_input(
-        "💲 Enter Base Hourly Respite Rate ($)",
-        min_value=0.0,
-        max_value=1000.0,
-        value=0.0,
-        step=0.25
-    )
-
+if file1 and file2:
+    base_rate = st.number_input("💲 Enter Base Hourly Respite Rate ($)", min_value=0.0, max_value=1000.0, value=0.0, step=0.25)
     if base_rate <= 0:
         st.warning("⚠️ Please enter a base hourly respite rate greater than 0 to proceed.")
-
+else:
+    base_rate = None
 
 # ---------------------------
 # Final Report Generation
 # ---------------------------
-if file1 and file2 is not None and base_rate and base_rate > 0:
+if file1 and file2 and base_rate and base_rate > 0:
     if st.button("🚀 Generate Report"):
         try:
-            # --- Load files ---
-            df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
-            df2 = pd.read_excel(file2, header=2, usecols=[
-                "Medicare Administrative Contractor (MAC)",
-                "State",
-                "Locality Number",
-                "Locality Name",
-                "2026 GAF (without 1.0 Work Floor)"
-            ])
+            # Load both files
+            df1 = pd.read_excel(file1) if file1.name.endswith(".xlsx") else pd.read_csv(file1, encoding="latin1")
+            df2 = pd.read_excel(file2, header=2)
 
-            # --- Clean up and normalize keys ---
+            # Select and clean key columns
             df1 = df1[["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
-            df1["STATE"] = df1["STATE"].astype(str).str.strip()
-            df1["LOCALITY"] = df1["LOCALITY"].astype(str).str.strip()
-            df1["CARRIER"] = df1["CARRIER"].astype(str).str.strip()
+            df2 = df2[["Medicare Administrative Contractor (MAC)", "State", "Locality Number", "Locality Name", "2026 GAF (without 1.0 Work Floor)"]].copy()
 
-            df2["State"] = df2["State"].astype(str).str.strip()
-            df2["Locality Number"] = df2["Locality Number"].astype(str).str.strip()
-            df2["Medicare Administrative Contractor (MAC)"] = df2["Medicare Administrative Contractor (MAC)"].astype(str).str.strip()
+            # --- Normalize text and numbers ---
+            for col in ["STATE", "CARRIER", "LOCALITY"]:
+                df1[col] = df1[col].astype(str).str.strip().str.upper()
+
+            for col in ["State", "Medicare Administrative Contractor (MAC)", "Locality Number"]:
+                df2[col] = df2[col].astype(str).str.strip().str.upper()
+
+            # zero-pad locality numbers (common CMS issue)
+            df1["LOCALITY"] = df1["LOCALITY"].str.zfill(3)
+            df2["Locality Number"] = df2["Locality Number"].str.zfill(3)
 
             # --- Primary merge: STATE + LOCALITY ---
             merged_df = pd.merge(
@@ -99,13 +78,12 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                 right_on=["State", "Locality Number"]
             )
 
-            # --- Identify rows that didn’t match ---
-            missing_mask = merged_df["2026 GAF (without 1.0 Work Floor)"].isna()
+            primary_matches = merged_df["2026 GAF (without 1.0 Work Floor)"].notna().sum()
 
-            # --- Secondary merge: MAC + LOCALITY (CARRIER ↔ MAC) ---
+            # --- Secondary merge: only for missing GAFs ---
+            missing_mask = merged_df["2026 GAF (without 1.0 Work Floor)"].isna()
             if missing_mask.any():
                 missing_df1 = merged_df.loc[missing_mask, ["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
-
                 secondary_merge = pd.merge(
                     missing_df1,
                     df2,
@@ -114,35 +92,41 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                     right_on=["Medicare Administrative Contractor (MAC)", "Locality Number"]
                 )
 
-                # Only fill missing values (don’t overwrite matched rows)
+                secondary_matches = secondary_merge["2026 GAF (without 1.0 Work Floor)"].notna().sum()
+
                 merged_df.loc[missing_mask, "2026 GAF (without 1.0 Work Floor)"] = secondary_merge[
                     "2026 GAF (without 1.0 Work Floor)"
                 ].values
                 merged_df.loc[missing_mask, "Locality Name"] = secondary_merge["Locality Name"].values
+            else:
+                secondary_matches = 0
 
-            # --- Compute Respite Rate ---
+            # --- Compute rates ---
+            merged_df["2026 GAF (without 1.0 Work Floor)"] = pd.to_numeric(
+                merged_df["2026 GAF (without 1.0 Work Floor)"], errors="coerce"
+            )
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
-                merged_df["2026 GAF (without 1.0 Work Floor)"].astype(float) * base_rate
+                merged_df["2026 GAF (without 1.0 Work Floor)"] * base_rate
             ).round(2)
 
-            merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df[
-                "Respite Reimbursement Rate ($/hr)"
-            ].map("{:.2f}".format)
-
-            # --- Final output formatting ---
+            # --- Final table ---
             final_df = merged_df[["ZIP CODE", "Locality Name", "Respite Reimbursement Rate ($/hr)"]].copy()
             final_df.rename(columns={"Locality Name": "Geography"}, inplace=True)
-
             final_df["ZIP CODE"] = final_df["ZIP CODE"].astype(str).str.zfill(5)
-            final_df["Geography"] = final_df["Geography"].astype(str).str.replace(r"\*+", "", regex=True).str.strip()
-            final_df.replace(to_replace=["nan", "NaT", "None", "NAN"], value="NA", inplace=True)
-            final_df.fillna("NA", inplace=True)
+            final_df["Geography"] = final_df["Geography"].fillna("NA").astype(str).str.strip()
 
-            # --- Display and downloads ---
-            st.subheader("✅ Final Output: ZIP Code, Geography, Respite Reimbursement Rate ($/hr)")
+            # --- Display summary ---
+            st.info(f"✅ Primary matches: {primary_matches:,}")
+            st.info(f"🔁 Fallback (MAC+Locality) recovered: {secondary_matches:,}")
+            st.info(f"📄 Total ZIPs processed: {len(final_df):,}")
+
+            # --- Show result ---
+            st.subheader("✅ Final Output")
             st.dataframe(final_df)
 
+            # Save to session
             st.session_state["final_df"] = final_df
+
             st.success("✅ Report generated successfully!")
 
         except Exception as e:
@@ -150,7 +134,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
 
 
 # ---------------------------
-# Download Buttons (if available)
+# Download Buttons
 # ---------------------------
 if "final_df" in st.session_state:
     final_df = st.session_state["final_df"]
