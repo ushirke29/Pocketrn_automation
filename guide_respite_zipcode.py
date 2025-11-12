@@ -143,7 +143,7 @@ if file1 and file2  is not None and base_rate and base_rate > 0:
 
             df2 = pd.read_excel(
                 file2,
-                usecols=["Medicare Administrative Contractor (MAC)", "State", "Locality Number", "Locality Name", "2025 GAF (without 1.0 Work Floor)"],
+                usecols=["Medicare Administrative Contractor (MAC)", "State", "Locality Number", "Locality Name", "2026 GAF (without 1.0 Work Floor)"],
                 header=2
             )
 
