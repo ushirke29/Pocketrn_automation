@@ -9,7 +9,7 @@ st.image("PocketRN_Logo.png", width=120)
 # Load and clean data
 @st.cache_data
 def load_data():
-    df = pd.read_csv("respite_rate_geography.csv", dtype={"ZIP CODE": str})
+    df = pd.read_csv("respite_rates_customer.csv", dtype={"ZIP CODE": str})
     df["ZIP CODE"] = df["ZIP CODE"].str.extract(r'="?([0-9]+)"?')[0]
     return df
 
