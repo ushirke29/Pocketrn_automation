@@ -104,8 +104,8 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                 df1,
                 df2,
                 how="left",
-                left_on=["STATE", "LOCALITY"],
-                right_on=["State", "Locality Number"]
+                left_on=["STATE", "CARRIER", "LOCALITY"],
+                right_on=["State", "Medicare Administrative Contractor (MAC)", "Locality Number"]
             )
 
             primary_matches = merged_df["2025 GAF (without 1.0 Work Floor)"].notna().sum()
