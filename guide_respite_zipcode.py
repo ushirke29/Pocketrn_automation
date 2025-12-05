@@ -69,7 +69,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
     if st.button("🚀 Generate Report"):
         try:
             df1 = pd.read_excel(file1) if file1.name.endswith("xlsx") else pd.read_csv(file1, encoding="latin1")
-            df2 = pd.read_excel(file2, header=2)
+            df2 = pd.read_excel(file2, header=3)
 
             # Select relevant columns
             df1 = df1[["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]]
