@@ -1,21 +1,25 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # Set up page
 st.set_page_config(page_title="Respite Lookup", layout="centered")
 
 st.image("PocketRN_Logo.png", width=120)
 
-# Load and clean data
+# Load data for selected year
 @st.cache_data
-def load_data():
-    df = pd.read_csv("respite_rates_customer.csv", dtype={"ZIP CODE": str})
+def load_year_data(year):
+    filename = f"respite_rate_geography_{year}.csv"
+    if not os.path.exists(filename):
+        st.error(f"Could not find file: {filename}")
+        return None
+    
+    df = pd.read_csv(filename, dtype={"ZIP CODE": str})
     df["ZIP CODE"] = df["ZIP CODE"].str.extract(r'="?([0-9]+)"?')[0]
     return df
 
-df = load_data()
-
-# Custom CSS styling
+# Custom CSS (unchanged)
 st.markdown("""
     <style>
     html, body, [class*="css"]  {
@@ -37,8 +41,8 @@ st.markdown("""
     }
 
     .card {
-        height: 200px;  /* Fixed height */
-        width: 100%;    /* Fill column */
+        height: 200px;
+        width: 100%;
         padding: 30px;
         border-radius: 15px;
         background-color: #f0f4f8;
@@ -68,23 +72,41 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Title & subtitle
+# Title & subtitle (unchanged)
 st.markdown('<div class="title"><strong>Respite Reimbursement Rate </strong></div>', unsafe_allow_html=True)
-
 st.markdown('<div class="subtitle">Search by ZIP Code to view the geography and hourly respite reimbursement rate</div>', unsafe_allow_html=True)
 
-# ZIP dropdown
-zip_codes = sorted(df["ZIP CODE"].unique())
-selected_zip = st.selectbox("📍 Select your ZIP Code:", [""] + zip_codes)
+# -----------------------------------------
+# ⭐ YEAR + ZIP ON SAME LINE, SAME WIDTH
+# -----------------------------------------
+year_col, zip_col = st.columns(2)   # equal-width columns
 
-# Show placeholder if nothing selected
+with year_col:
+    selected_year = st.selectbox("📅 Select Year:", [2025, 2026])
+
+# Load data for selected year
+df = load_year_data(selected_year)
+
+with zip_col:
+    zip_codes = sorted(df["ZIP CODE"].unique()) if df is not None else []
+    selected_zip = st.selectbox("📍 Select your ZIP Code:", [""] + zip_codes)
+
+# -----------------------------------------
+
 if not selected_zip:
-    st.info("Please select a ZIP Code from the dropdown above to view details.")
+    st.info("Please select a ZIP Code.")
 else:
     row = df[df["ZIP CODE"] == selected_zip]
+
     if not row.empty:
         geography = row.iloc[0]["Geography"]
         rate = row.iloc[0]["Respite Reimbursement Rate ($/hr)"]
+
+        # ⭐ Dynamic date range based on year
+        if selected_year == 2025:
+            valid_date_text = "Valid 7/1/2025 – 12/31/2025"
+        else:
+            valid_date_text = "Valid 1/1/2026 – 12/31/2026"
 
         col1, col2 = st.columns(2)
 
@@ -102,11 +124,12 @@ else:
                     ${rate:.2f}
                     <div style="font-size: 14px; color: #d9534f; margin-top: 10px;">
                         72 hours annually per client<br>
-                        (Valid 7/1/2025–6/30/2026)
+                        (Rates and annual respite totals are determined by Medicare and may be adjusted. We will notify partners of any updates.)
                     </div>
                 </div>
                 ''',
                 unsafe_allow_html=True
             )
+
     else:
         st.warning("ZIP Code not found.")
