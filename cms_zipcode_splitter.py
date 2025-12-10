@@ -106,6 +106,13 @@ if uploaded_file is not None:
         st.write(f"Total ZIP entries: **{final_unique_count}**")
         st.dataframe(df_excel)
 
+        st.markdown("""
+        ### ⚠️ Important Notice  
+        **Please open the downloaded CSV files in Microsoft Excel — NOT in Apple Numbers.**  
+        Numbers may not let you upload the data in the same format required for the CMS file upload.
+        """)
+
+
         # EXPORT FUNCTIONS
         def export_single_file(df_output):
             buf = StringIO()
