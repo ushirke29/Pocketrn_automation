@@ -12,7 +12,7 @@ st.markdown("""
 1. **Open the Google Sheet and paste your ZIP codes** into the column provided:  
    👉 [Google Sheet Link](https://docs.google.com/spreadsheets/d/1sSK1vinAysZmh7nyf2ZtMi1kZSKvdVkna_qgYIKqDBg/edit?gid=0#gid=0)
 
-2. After pasting the ZIP codes, go to  
+2. After pasting the ZIP codes, please change the column name to the exact column name as mentioned in the CMS template and then go to  
    **File → Download → Comma-separated values (.csv)**  
    to download your CSV file.
 
@@ -110,6 +110,15 @@ if uploaded_file is not None:
         ### ⚠️ Important Notice  
         **Please open the downloaded CSV files in Microsoft Excel — NOT in Apple Numbers.**  
         Numbers may not let you upload the data in the same format required for the CMS file upload.
+
+        If the CMS portal does not accept the file or gives an error while uploading, please follow these steps:
+
+        1. Open the downloaded file in **Excel**.  
+        2. Copy the **header name** from CMS provided template into a new Excel workbook.  
+        3. Save the new workbook as a **CSV (Comma delimited) (.csv)** file.  
+        4. Upload this new CSV file to the CMS portal.
+
+        This ensures the correct encoding and formatting required by CMS.
         """)
 
 
