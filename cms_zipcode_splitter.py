@@ -21,18 +21,17 @@ st.markdown("""
 4. This tool will:
    - Clean and extract all valid ZIP codes 
    - Remove duplicates  
-   - Generate one full CSV and multiple chunked CSVs (10,000 rows each)
-
-Once complete, download your files using the buttons provided below.
+   - Generate one full CSV and multiple chunked CSVs (Excel-safe ≤ 10,000 rows each)
 """)
 
 
 st.title("📍 Zipcode Splitter (Excel-Safe ZIP Codes)")
 
-MAX_ROWS = 10000
+# Excel max rows = 10,000 → so ZIP rows = 9,999 (header = 1 row)
+MAX_ROWS = 9999
 
 uploaded_file = st.file_uploader(
-    "Upload CSV containing a 'zip_codes' column",
+    "Upload CSV containing a 'Zip_Codes' column",
     type=["csv"]
 )
 
@@ -45,15 +44,15 @@ if uploaded_file is not None:
             na_filter=False
         )
 
-        if "zip_codes" not in df.columns:
-            st.error("❌ CSV must contain a column named 'zip_codes'.")
+        if "Zip_Codes" not in df.columns:
+            st.error("❌ CSV must contain a column named 'Zip_Codes'.")
             st.stop()
 
         collected = []
         total_input_rows = len(df)
 
         for _, row in df.iterrows():
-            raw = str(row["zip_codes"])
+            raw = str(row["Zip_Codes"])
             if raw.strip() == "":
                 continue
 
@@ -63,13 +62,10 @@ if uploaded_file is not None:
                 z = z.strip()
                 if z == "":
                     continue
-
                 if re.search(r"[A-Za-z]", z):
                     continue
-
                 if not z.isdigit():
                     continue
-
                 if z == "000":
                     continue
 
@@ -84,11 +80,11 @@ if uploaded_file is not None:
 
         # Excel-safe formatting
         df_excel = pd.DataFrame(
-            {"zip_codes": [f'="{z}"' for z in unique_zipcodes]},
+            {"Zip_Codes": [f'="{z}"' for z in unique_zipcodes]},
             dtype=str
         )
 
-        # Chunk stats
+        # Correct chunk calculation for 9,999 rows + header
         num_files = max(1, math.ceil(final_unique_count / MAX_ROWS))
 
         # ------------------------
@@ -101,21 +97,16 @@ if uploaded_file is not None:
         **Total ZIP entries parsed:** {total_parsed_zipcodes}  
         **Duplicate ZIPs removed:** {total_parsed_zipcodes - final_unique_count}  
         **Final unique ZIP count:** {final_unique_count}  
-        **Chunk size:** {MAX_ROWS} rows  
+        **Chunk size:** {MAX_ROWS} ZIP rows per file  
         **Total output chunk files:** {num_files}  
         """)
 
-        # ------------------------
         # Display output table
-        # ------------------------
         st.subheader("📌 Final ZIP Codes (Excel-friendly, leading zeros preserved)")
         st.write(f"Total ZIP entries: **{final_unique_count}**")
         st.dataframe(df_excel)
 
-        # ------------------------
         # EXPORT FUNCTIONS
-        # ------------------------
-
         def export_single_file(df_output):
             buf = StringIO()
             df_output.to_csv(buf, index=False, quoting=csv.QUOTE_MINIMAL)
@@ -132,7 +123,6 @@ if uploaded_file is not None:
                 start = i * MAX_ROWS
                 end = start + MAX_ROWS
 
-                # Strict sequential slicing → guarantees no duplicates
                 chunk = df_output.iloc[start:end]
 
                 buf = StringIO()
@@ -145,15 +135,13 @@ if uploaded_file is not None:
                     mime="text/csv"
                 )
 
-        # ------------------------
-        # DOWNLOADS
-        # ------------------------
+        # DOWNLOAD BUTTONS
         st.markdown("## ⬇️ Downloads")
 
         export_single_file(df_excel)
         export_chunks(df_excel)
 
-        st.success("🎉 Done! All chunk files contain distinct ZIP codes with correct filenames.")
+        st.success("🎉 Done! Chunk files are now capped at 9,999 ZIP rows (10,000 including header).")
 
     except Exception as e:
         st.error(f"⚠️ Error: {e}")
