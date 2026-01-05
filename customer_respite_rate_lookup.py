@@ -82,7 +82,11 @@ st.markdown('<div class="subtitle">Search by ZIP Code to view the geography and 
 year_col, zip_col = st.columns(2)   # equal-width columns
 
 with year_col:
-    selected_year = st.selectbox("📅 Select Year:", [2025, 2026])
+    selected_year = st.selectbox(
+        "📅 Select Year:",
+        [2025, 2026],
+        index=1  # ✅ makes 2026 open by default
+    )
 
 # Load data for selected year
 df = load_year_data(selected_year)
