@@ -93,7 +93,7 @@ df = load_year_data(selected_year)
 
 with zip_col:
     zip_codes = sorted(df["ZIP CODE"].unique()) if df is not None else []
-    selected_zip = st.selectbox("📍 Select your ZIP Code:", [""] + zip_codes)
+    selected_zip = st.selectbox("📍 Enter ZIP Code:", [""] + zip_codes)
 
 # -----------------------------------------
 
@@ -127,7 +127,7 @@ else:
                     <div class="label">Respite Rate ($/hr)</div>
                     ${rate:.2f}
                     <div style="font-size: 14px; color: #d9534f; margin-top: 10px;">
-                        72 hours annually per client<br>
+                        72 hours annually per client (resets July 1st annually)<br>
                         (Rates and annual respite totals are determined by Medicare and may be adjusted. We will notify partners of any updates.)
                     </div>
                 </div>
