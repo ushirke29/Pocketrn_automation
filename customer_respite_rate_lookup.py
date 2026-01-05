@@ -55,8 +55,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
 
-        min-height: 260px;
-        height: auto;
+        min-height: 320px;
         justify-content: center;
         align-items: center;
         overflow: hidden;
