@@ -41,7 +41,6 @@ st.markdown("""
     }
 
     .card {
-        height: 200px;
         width: 100%;
         padding: 30px;
         border-radius: 15px;
@@ -55,6 +54,9 @@ st.markdown("""
 
         display: flex;
         flex-direction: column;
+
+        min-height: 260px;
+        height: auto;
         justify-content: center;
         align-items: center;
         overflow: hidden;
