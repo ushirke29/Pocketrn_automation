@@ -78,7 +78,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                 "State",
                 "Locality Number",
                 "Locality Name",
-                "2026 GAF (with 1.0 Work Floor)"
+                "2026 GAF (without 1.0 Work Floor)"
             ]]
 
             # ---------------------------
@@ -108,12 +108,12 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                 right_on=["State", "Medicare Administrative Contractor (MAC)", "Locality Number"]
             )
 
-            primary_matches = merged_df["2026 GAF (with 1.0 Work Floor)"].notna().sum()
+            primary_matches = merged_df["2026 GAF (without 1.0 Work Floor)"].notna().sum()
 
             # ---------------------------
             # Fallback merge: MAC + LOCALITY (CARRIER ↔ MAC)
             # ---------------------------
-            missing_mask = merged_df["2026 GAF (with 1.0 Work Floor)"].isna()
+            missing_mask = merged_df["2026 GAF (without 1.0 Work Floor)"].isna()
             if missing_mask.any():
                 missing_df1 = df1.loc[missing_mask, ["STATE", "ZIP CODE", "CARRIER", "LOCALITY"]].copy()
                 secondary_merge = pd.merge(
@@ -124,11 +124,11 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
                     right_on=["Medicare Administrative Contractor (MAC)", "Locality Number"]
                 )
 
-                secondary_matches = secondary_merge["2026 GAF (with 1.0 Work Floor)"].notna().sum()
+                secondary_matches = secondary_merge["2026 GAF (without 1.0 Work Floor)"].notna().sum()
 
                 # Fill missing from secondary results
-                merged_df.loc[missing_mask, "2026 GAF (with 1.0 Work Floor)"] = secondary_merge[
-                    "2026 GAF (with 1.0 Work Floor)"
+                merged_df.loc[missing_mask, "2026 GAF (without 1.0 Work Floor)"] = secondary_merge[
+                    "2026 GAF (without 1.0 Work Floor)"
                 ].values
                 merged_df.loc[missing_mask, "Locality Name"] = secondary_merge["Locality Name"].values
             else:
@@ -138,7 +138,7 @@ if file1 and file2 is not None and base_rate and base_rate > 0:
             # Compute Respite Rates
             # ---------------------------
             merged_df["Respite Reimbursement Rate ($/hr)"] = (
-                pd.to_numeric(merged_df["2026 GAF (with 1.0 Work Floor)"], errors="coerce") * base_rate
+                pd.to_numeric(merged_df["2026 GAF (without 1.0 Work Floor)"], errors="coerce") * base_rate
             ).round(2)
 
             merged_df["Respite Reimbursement Rate ($/hr)"] = merged_df[
