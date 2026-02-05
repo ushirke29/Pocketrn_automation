@@ -4,9 +4,8 @@ from google.oauth2.service_account import Credentials
 
 st.title("Read & Update Google Sheet")
 
-# -----------------------------------
-# Google Sheets client
-# -----------------------------------
+### Google sheet authorization and connection ####
+
 @st.cache_resource
 def get_gsheet_client():
     scopes = [
@@ -21,19 +20,14 @@ def get_gsheet_client():
 
 client = get_gsheet_client()
 sheet = client.open_by_url(st.secrets["config"]["sheet_url"])
-worksheet = sheet.worksheet("Sheet1")  # change if needed
+worksheet = sheet.worksheet("Sheet1")  
 
-# -----------------------------------
-# READ DATA
-# -----------------------------------
-data = worksheet.get_all_records()  # list of dicts
+
+data = worksheet.get_all_records()  
 
 st.subheader("Existing Data")
 st.dataframe(data)
 
-# -----------------------------------
-# INPUT FORM
-# -----------------------------------
 st.subheader("Add or Update Record")
 
 name = st.text_input("Name")
@@ -41,9 +35,6 @@ email = st.text_input("Email (used as unique key)")
 city = st.text_input("City")
 score = st.number_input("Score", min_value=0, max_value=100, step=1)
 
-# -----------------------------------
-# UPDATE / INSERT LOGIC
-# -----------------------------------
 if st.button("Save"):
     try:
         email_list = worksheet.col_values(2)  # Email column (1-based index)
