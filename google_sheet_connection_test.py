@@ -37,10 +37,10 @@ score = st.number_input("Score", min_value=0, max_value=100, step=1)
 
 if st.button("Save"):
     try:
-        email_list = worksheet.col_values(2)  # Email column (1-based index)
+        email_list = worksheet.col_values(2)  
 
         if email in email_list:
-            row_index = email_list.index(email) + 1  # +1 for header offset
+            row_index = email_list.index(email) + 1  
 
             worksheet.update(
                 f"A{row_index}:D{row_index}",
