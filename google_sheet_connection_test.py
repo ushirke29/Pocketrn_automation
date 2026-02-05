@@ -28,7 +28,8 @@ email = st.text_input("Email", value="john.doe@test.com")
 city = st.text_input("City", value="San Francisco")
 
 # dummy random value
-score = st.number_input("Score", min_value=0, max_value=100, value=random.randint(50, 90))
+
+score = st.number_input("Score", min_value=0, max_value=100, step=1)
 
 # -----------------------------------
 # Submit button
