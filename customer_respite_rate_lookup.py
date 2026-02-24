@@ -18,7 +18,7 @@ def load_period_data(period_key):
     filename_map = {
         "2025": "respite_rate_geography_2025.csv",
         "Jan 2026": "respite_rate_geography_2026_jan.csv",
-        "Feb 26 and onwards": "respite_rate_geography_2026_feb.csv",
+        "Feb 1, 2026 – Current": "respite_rate_geography_2026_feb.csv",
     }
 
     filename = filename_map.get(period_key)
@@ -110,7 +110,7 @@ period_col, zip_col = st.columns(2)
 with period_col:
     selected_period = st.selectbox(
         "📅 Select Period:",
-        ["2025", "Jan 2026", "Feb 26 and onwards"],
+        ["2025", "Jan 2026", "Feb 1, 2026 – Current"],
         index=2
     )
 
@@ -137,7 +137,7 @@ else:
             valid_date_text = "Valid 7/1/2025 – 12/31/2025"
         elif selected_period == "Jan 2026":
             valid_date_text = "Valid 1/1/2026 – 1/31/2026"
-        elif selected_period == "Feb 26 and onwards":
+        elif selected_period == "Feb 1, 2026 – Current":
             valid_date_text = "Valid from 2/1/2026 and onwards"
         else:
             valid_date_text = None
