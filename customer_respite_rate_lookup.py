@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 import streamlit.components.v1 as components
-
+import io
+import zipfile
 
 # -----------------------------------------
 # Page configuration
@@ -226,14 +227,13 @@ else:
 
 
 # -----------------------------------------
-# Download CSV Files (Styled Section)
+# Download CSV Files (ZIP Download)
 # -----------------------------------------
 
 st.markdown("<br><br>", unsafe_allow_html=True)
 
 st.markdown("### Download Respite Rate Files")
-st.write("Select one or more files and download the rate tables.")
-
+st.write("Select one or more files and download them as a single ZIP file.")
 
 download_files = {
     "2025 Rates": "respite_rate_geography_2025.csv",
@@ -241,23 +241,27 @@ download_files = {
     "Feb 1, 2026 – Current Rates": "respite_rate_geography_2026_feb.csv"
 }
 
-
 selected_downloads = st.multiselect(
     "Select file(s) to download:",
     list(download_files.keys())
 )
 
+if selected_downloads:
 
-for label in selected_downloads:
-    file_path = download_files[label]
+    zip_buffer = io.BytesIO()
 
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            st.download_button(
-                label=f"Download {label}",
-                data=f,
-                file_name=file_path,
-                mime="text/csv"
-            )
-    else:
-        st.warning(f"File not found: {file_path}")
+    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        for label in selected_downloads:
+            file_path = download_files[label]
+
+            if os.path.exists(file_path):
+                zip_file.write(file_path, arcname=os.path.basename(file_path))
+
+    zip_buffer.seek(0)
+
+    st.download_button(
+        label="Download Selected Files",
+        data=zip_buffer,
+        file_name="respite_rate_files.zip",
+        mime="application/zip"
+    )
