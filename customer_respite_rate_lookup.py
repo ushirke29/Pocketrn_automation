@@ -149,7 +149,7 @@ with period_col:
     selected_period = st.selectbox(
         "📅 Select Period:",
         ["2025", "Jan 2026", "Feb 1, 2026 – Current"],
-        index=0
+        index=2
     )
 
 df, filename = load_period_data(selected_period)
