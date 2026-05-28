@@ -149,8 +149,8 @@ period_col, zip_col = st.columns(2)
 with period_col:
     selected_period = st.selectbox(
         "📅 Select Period:",
-        ["2025", "Jan 2026", "Feb 1, 2026 – Current"],
-        index=2
+        ["2025", "Jan 2026", "Feb 1, 2026 – June 30, 2026", "Jul 1, 2026 - Current"],
+        index=3
     )
 
 df, filename = load_period_data(selected_period)
