@@ -19,7 +19,8 @@ def load_period_data(period_key):
     filename_map = {
         "2025": "respite_rate_geography_2025.csv",
         "Jan 2026": "respite_rate_geography_2026_jan.csv",
-        "Feb 1, 2026 – Current": "respite_rate_geography_2026_feb.csv",
+        "Feb 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
+        "Jul 1, 2026 - Current": "respite_rate_geography_2026_july.csv"
     }
 
     filename = filename_map.get(period_key)
@@ -176,7 +177,9 @@ else:
         elif selected_period == "Jan 2026":
             valid_date_text = "Valid 1/1/2026 – 1/31/2026"
         elif selected_period == "Feb 2026":
-            valid_date_text = "Valid from 2/1/2026"
+            valid_date_text = "Feb 1, 2026 – June 30, 2026"
+        elif selected_period == "Jul 1, 2026 - Current":
+            valid_date_text = "Valid from 7/1/2026 Onwards"
         else:
             valid_date_text = None
 
@@ -238,7 +241,8 @@ st.write("Select one or more files and download them as a single ZIP file.")
 download_files = {
     "2025 Rates": "respite_rate_geography_2025.csv",
     "Jan 2026 Rates": "respite_rate_geography_2026_jan.csv",
-    "Feb 1, 2026 – Current Rates": "respite_rate_geography_2026_feb.csv"
+    "Feb 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
+    "Jul 1, 2026 - Current": "respite_rate_geography_2026_july.csv"
 }
 
 selected_downloads = st.multiselect(
