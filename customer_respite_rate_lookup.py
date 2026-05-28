@@ -20,7 +20,7 @@ def load_period_data(period_key):
         "2025": "respite_rate_geography_2025.csv",
         "Jan 2026": "respite_rate_geography_2026_jan.csv",
         "Feb 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
-        "Jul 1, 2026 - Current": "respite_rate_geography_2026_july.csv"
+        "Jul 1, 2026 - Onwards": "respite_rate_geography_2026_july.csv"
     }
 
     filename = filename_map.get(period_key)
@@ -147,10 +147,17 @@ st.markdown(
 period_col, zip_col = st.columns(2)
 
 with period_col:
+    period_options = [
+        "2025",
+        "Jan 2026",
+        "Feb 1, 2026 – June 30, 2026",
+        "Jul 1, 2026 - Onwards"
+    ]
+
     selected_period = st.selectbox(
         "📅 Select Period:",
-        ["2025", "Jan 2026", "Jul 1, 2026 - Current", "Feb 1, 2026 – June 30, 2026"],
-        index=3
+        period_options,
+        index=period_options.index("Feb 1, 2026 – June 30, 2026")
     )
 
 df, filename = load_period_data(selected_period)
@@ -176,9 +183,9 @@ else:
             valid_date_text = "Valid 7/1/2025 – 12/31/2025"
         elif selected_period == "Jan 2026":
             valid_date_text = "Valid 1/1/2026 – 1/31/2026"
-        elif selected_period == "Feb 2026":
-            valid_date_text = "Feb 1, 2026 – June 30, 2026"
-        elif selected_period == "Jul 1, 2026 - Current":
+        elif selected_period == "Feb 1, 2026 – June 30, 2026":
+            valid_date_text = "Valid 2/1/2026 – 6/30/2026"
+        elif selected_period == "Jul 1, 2026 - Onwards":
             valid_date_text = "Valid from 7/1/2026 Onwards"
         else:
             valid_date_text = None
@@ -242,7 +249,7 @@ download_files = {
     "2025 Rates": "respite_rate_geography_2025.csv",
     "Jan 2026 Rates": "respite_rate_geography_2026_jan.csv",
     "Feb 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
-    "Jul 1, 2026 - Current": "respite_rate_geography_2026_july.csv"
+    "Jul 1, 2026 - Onwards": "respite_rate_geography_2026_july.csv"
 }
 
 selected_downloads = st.multiselect(
