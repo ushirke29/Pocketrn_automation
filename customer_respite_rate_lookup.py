@@ -17,10 +17,10 @@ st.image("PocketRN_Logo.png", width=120)
 @st.cache_data
 def load_period_data(period_key):
     filename_map = {
-        "2025": "respite_rate_geography_2025.csv",
-        "Jan 2026": "respite_rate_geography_2026_jan.csv",
-        "Feb 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
-        "Jul 1, 2026 - Onwards": "respite_rate_geography_2026_july.csv"
+        "July 1, 2025 – December 31, 2025": "respite_rate_geography_2025.csv",
+        "January 1, 2026 – January 31, 2026": "respite_rate_geography_2026_jan.csv",
+        "February 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
+        "July 1, 2026 – Onwards": "respite_rate_geography_2026_july.csv"
     }
 
     filename = filename_map.get(period_key)
@@ -148,16 +148,16 @@ period_col, zip_col = st.columns(2)
 
 with period_col:
     period_options = [
-        "2025",
-        "Jan 2026",
-        "Feb 1, 2026 – June 30, 2026",
-        "Jul 1, 2026 - Onwards"
+        "July 1, 2025 – December 31, 2025",
+        "January 1, 2026 – January 31, 2026",
+        "February 1, 2026 – June 30, 2026",
+        "July 1, 2026 – Onwards"
     ]
 
     selected_period = st.selectbox(
         "📅 Select Period:",
         period_options,
-        index=period_options.index("Feb 1, 2026 – June 30, 2026")
+        index=period_options.index("February 1, 2026 – June 30, 2026")
     )
 
 df, filename = load_period_data(selected_period)
@@ -179,14 +179,14 @@ else:
         geography = row.iloc[0]["Geography"]
         rate = float(row.iloc[0]["Respite Reimbursement Rate ($/hr)"])
 
-        if selected_period == "2025":
-            valid_date_text = "Valid 7/1/2025 – 12/31/2025"
-        elif selected_period == "Jan 2026":
-            valid_date_text = "Valid 1/1/2026 – 1/31/2026"
-        elif selected_period == "Feb 1, 2026 – June 30, 2026":
-            valid_date_text = "Valid 2/1/2026 – 6/30/2026"
-        elif selected_period == "Jul 1, 2026 - Onwards":
-            valid_date_text = "Valid from 7/1/2026 Onwards"
+        if selected_period == "July 1, 2025 – December 31, 2025":
+            valid_date_text = "Valid July 1, 2025 – December 31, 2025"
+        elif selected_period == "January 1, 2026 – January 31, 2026":
+            valid_date_text = "Valid January 1, 2026 – January 31, 2026"
+        elif selected_period == "February 1, 2026 – June 30, 2026":
+            valid_date_text = "Valid February 1, 2026 – June 30, 2026"
+        elif selected_period == "July 1, 2026 – Onwards":
+            valid_date_text = "Valid July 1, 2026 – Onwards"
         else:
             valid_date_text = None
 
@@ -246,10 +246,10 @@ st.markdown("### Download Respite Rate Files")
 st.write("Select one or more files and download them as a single ZIP file.")
 
 download_files = {
-    "2025 Rates": "respite_rate_geography_2025.csv",
-    "Jan 2026 Rates": "respite_rate_geography_2026_jan.csv",
-    "Feb 1, 2026 – June 30, 2026": "respite_rate_geography_2026_feb.csv",
-    "Jul 1, 2026 - Onwards": "respite_rate_geography_2026_july.csv"
+    "July 1, 2025 – December 31, 2025 Rates": "respite_rate_geography_2025.csv",
+    "January 1, 2026 – January 31, 2026 Rates": "respite_rate_geography_2026_jan.csv",
+    "February 1, 2026 – June 30, 2026 Rates": "respite_rate_geography_2026_feb.csv",
+    "July 1, 2026 – Onwards Rates": "respite_rate_geography_2026_july.csv"
 }
 
 selected_downloads = st.multiselect(
