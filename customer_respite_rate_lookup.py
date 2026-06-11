@@ -132,7 +132,7 @@ st.markdown("""
 # Title
 # -----------------------------------------
 st.markdown(
-    '<div class="title"><strong>Respite Reimbursement Rate</strong></div>',
+    '<div class="title"><strong>In Home Respite Reimbursement Rate</strong></div>',
     unsafe_allow_html=True
 )
 st.markdown(
