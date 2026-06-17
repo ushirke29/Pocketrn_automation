@@ -223,9 +223,9 @@ else:
         </div>
 
         <div class="respite-note">
-            72 hours annually per client (resets July 1st annually). Starting July 1st, 2026: 76 hours anually per client.<br>
-            (Rates and annual respite totals are determined by Medicare and may be adjusted.
-            We will notify partners of any updates.)
+            For 7/1/2025-6/30/2026, respite eligible patients receive 72 hours of in-home respite.<br>
+            For 7/1/2026-6/30/2027, respite eligible patients receive 76 hours of in-home respite.<br>
+            Rates and annual respite totals are determined by Medicare and may be adjusted. We will notify partners of any updates.
         </div>
         </div>
         """,
