@@ -223,8 +223,8 @@ else:
         </div>
 
         <div class="respite-note">
-            For 7/1/2025-6/30/2026, respite eligible patients receive 72 hours of in-home respite.<br>
-            For 7/1/2026-6/30/2027, respite eligible patients receive 76 hours of in-home respite.<br>
+            For 7/1/2025-6/30/2026, respite eligible-patients receive 72 hours of in-home respite.<br>
+            For 7/1/2026-6/30/2027, respite eligible-patients receive 76 hours of in-home respite.<br><br>
             Rates and annual respite totals are determined by Medicare and may be adjusted. We will notify partners of any updates.
         </div>
         </div>
