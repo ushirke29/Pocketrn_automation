@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+from datetime import date, datetime
 
 # 🔽 Add your image here (local file or URL)
 st.image("PocketRN_Logo.png", width=120)
@@ -8,6 +9,14 @@ st.title("PocketRN GUIDE Model Respite Rates By Geography")
 
 st.markdown("Please follow the below instructions for generating updated table of **GUIDE Respite Rates by Zip Code**")
 st.markdown("📘 [Instructions Document](https://docs.google.com/document/d/1bR8tFjBq4CmIvYzESSYnameZQyv3pMC4js9JgxSe5h8/edit?tab=t.0)")
+
+# ---------------------------
+# Start Date Input
+# ---------------------------
+start_date = st.date_input(
+    "📅 Select Start Date",
+    value=date.today()
+)
 
 # ---------------------------
 # File 1: ZIP Code to Carrier Locality
@@ -50,13 +59,14 @@ if file1:
 """)
 
     file2 = st.file_uploader(
-    "Upload Addendum D Geographic Adjustment Factors file",
-    type=["xlsx", "csv"],
-    key="file2",
-    label_visibility="collapsed"
-)
+        "Upload Addendum D Geographic Adjustment Factors file",
+        type=["xlsx", "csv"],
+        key="file2",
+        label_visibility="collapsed"
+    )
 else:
     file2 = None
+
 # ---------------------------
 # GAF Column Selection + Base Rate Input
 # ---------------------------
@@ -67,7 +77,7 @@ if file1 and file2 is not None:
     try:
         preview_df2 = (
             pd.read_excel(file2, header=3)
-            if file2.name.endswith("xlsx")
+            if file2.name.lower().endswith("xlsx")
             else pd.read_csv(file2, encoding="latin1")
         )
 
@@ -106,13 +116,13 @@ if file1 and file2 is not None and selected_gaf_column and base_rate and base_ra
         try:
             df1 = (
                 pd.read_excel(file1)
-                if file1.name.endswith("xlsx")
+                if file1.name.lower().endswith("xlsx")
                 else pd.read_csv(file1, encoding="latin1")
             )
 
             df2 = (
                 pd.read_excel(file2, header=3)
-                if file2.name.endswith("xlsx")
+                if file2.name.lower().endswith("xlsx")
                 else pd.read_csv(file2, encoding="latin1")
             )
 
@@ -248,6 +258,26 @@ if file1 and file2 is not None and selected_gaf_column and base_rate and base_ra
             final_df.fillna("NA", inplace=True)
 
             # ---------------------------
+            # Backend Generated Columns
+            # ---------------------------
+
+            # start_date is selected once from UI and applied to every row
+            final_df["start_date"] = start_date.strftime("%Y-%m-%d")
+
+            # run_id is generated in backend only
+            # Same numeric run_id is applied to all rows in this report
+            final_df["run_id"] = int(datetime.now().strftime("%Y%m%d%H%M%S"))
+
+            # Keep run_id and start_date as first columns
+            final_df = final_df[[
+                "run_id",
+                "start_date",
+                "ZIP CODE",
+                "Geography",
+                "Respite Reimbursement Rate ($/hr)"
+            ]]
+
+            # ---------------------------
             # Summary + Output
             # ---------------------------
             st.info(f"✅ Primary matches: {primary_matches:,}")
@@ -255,7 +285,7 @@ if file1 and file2 is not None and selected_gaf_column and base_rate and base_ra
             st.info(f"📄 Total ZIPs processed: {len(final_df):,}")
             st.info(f"📌 GAF column used: {selected_gaf_column}")
 
-            st.subheader("✅ Final Output: ZIP Code, Geography, Respite Reimbursement Rate ($/hr)")
+            st.subheader("✅ Final Output")
             st.dataframe(final_df)
 
             st.session_state["final_df"] = final_df
@@ -273,7 +303,10 @@ if "final_df" in st.session_state:
 
     # CSV export
     csv_df = final_df.copy()
+
+    # Preserve ZIP CODE as text in CSV so leading zeros are not lost
     csv_df["ZIP CODE"] = csv_df["ZIP CODE"].apply(lambda x: f'="{x}"')
+
     csv_data = csv_df.to_csv(index=False).encode("utf-8")
 
     st.download_button(
@@ -292,10 +325,17 @@ if "final_df" in st.session_state:
         workbook = writer.book
         worksheet = writer.sheets["Respite Rates"]
 
-        zip_col_idx = final_df.columns.get_loc("ZIP CODE")
-        text_format = workbook.add_format({"num_format": "@"})
+        zip_text_format = workbook.add_format({"num_format": "@"})
+        run_id_number_format = workbook.add_format({"num_format": "0"})
 
-        worksheet.set_column(zip_col_idx, zip_col_idx, 12, text_format)
+        zip_col_idx = final_df.columns.get_loc("ZIP CODE")
+        run_id_col_idx = final_df.columns.get_loc("run_id")
+
+        # Preserve ZIP CODE leading zeros
+        worksheet.set_column(zip_col_idx, zip_col_idx, 12, zip_text_format)
+
+        # Keep run_id numeric in Excel
+        worksheet.set_column(run_id_col_idx, run_id_col_idx, 18, run_id_number_format)
 
     xlsx_data = xlsx_output.getvalue()
 
