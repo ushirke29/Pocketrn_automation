@@ -157,7 +157,7 @@ with period_col:
     selected_period = st.selectbox(
         "📅 Select Period:",
         period_options,
-        index=period_options.index("February 1, 2026 – June 30, 2026")
+        index=period_options.index("July 1, 2026 – Onwards")
     )
 
 df, filename = load_period_data(selected_period)
@@ -223,7 +223,6 @@ else:
         </div>
 
         <div class="respite-note">
-            For 7/1/2025-6/30/2026, respite eligible-patients receive 72 hours of in-home respite.<br>
             For 7/1/2026-6/30/2027, respite eligible-patients receive 76 hours of in-home respite.<br><br>
             Rates and annual respite totals are determined by Medicare and may be adjusted. We will notify partners of any updates.
         </div>
